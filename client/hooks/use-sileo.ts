@@ -17,7 +17,7 @@ export function useSileo() {
     toast({
       title: options.title,
       description: options.message,
-      state: options.type ?? "info",
+      type: options.type ?? "info",
       duration: options.duration ?? 6000,
     });
   };
