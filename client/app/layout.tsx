@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Poppins, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { ThemeToggle } from "@/components/theme-toggle";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const poppins = Poppins({
+  variable: "--font-poppins",
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
@@ -26,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col antialiased`}>
+      <body className={`${inter.variable} ${poppins.variable} ${jetbrainsMono.variable} min-h-full flex flex-col antialiased`}>
         <Providers>
           <header className="border-b">
             <div className="container mx-auto px-4 py-3 flex items-center justify-between">
