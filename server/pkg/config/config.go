@@ -7,11 +7,12 @@ import (
 )
 
 type Config struct {
-	AppName string
-	Env     string
-	Host    string
-	Port    string
-	PgURL   string
+	AppName   string
+	Env       string
+	Host      string
+	Port      string
+	PgURL     string
+	JWTSecret string
 }
 
 func Load() (*Config, error) {
@@ -24,10 +25,11 @@ func Load() (*Config, error) {
 	}
 
 	return &Config{
-		AppName: viper.GetString("APP_NAME"),
-		Env:     viper.GetString("ENV"),
-		Host:    viper.GetString("HOST"),
-		Port:    viper.GetString("PORT"),
-		PgURL:   viper.GetString("PG_URL"),
+		AppName:   viper.GetString("APP_NAME"),
+		Env:       viper.GetString("ENV"),
+		Host:      viper.GetString("HOST"),
+		Port:      viper.GetString("PORT"),
+		PgURL:     viper.GetString("PG_URL"),
+		JWTSecret: viper.GetString("JWT_SECRET"),
 	}, nil
 }
