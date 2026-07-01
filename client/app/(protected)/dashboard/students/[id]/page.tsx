@@ -5,6 +5,7 @@ import { StudentDetail } from "@/types/student"
 import { RiskBadge } from "@/components/students/risk-badge"
 import { AssessButton } from "@/components/students/assess-button"
 import { RecommendButton } from "@/components/students/recommend-button"
+import { RecordForm } from "@/components/students/record-form"
 
 async function getStudent(id: string): Promise<StudentDetail | null> {
   try {
@@ -134,6 +135,16 @@ export default async function StudentDetailPage({
           La IA analizará los factores de riesgo del estudiante y generará una recomendación personalizada y contextualizada para el docente.
         </p>
         <RecommendButton studentId={student.id} />
+      </div>
+
+      <div className="rounded-xl border p-5 flex flex-col gap-4">
+        <div>
+          <h2 className="font-semibold text-sm">Registrar asistencia y notas</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Registra o actualiza los datos académicos del estudiante por bimestre.
+          </p>
+        </div>
+        <RecordForm studentId={student.id} />
       </div>
 
       {student.records.length > 0 && (
