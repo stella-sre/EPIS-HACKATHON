@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GraduationCap } from "lucide-react";
+import Image from "next/image";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
@@ -9,7 +9,7 @@ export function Navbar() {
     <header className="border-b">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <GraduationCap className="w-6 h-6 text-primary" />
+          <Image src="/logo.png" alt="Alerta Temprana" width={32} height={32} className="object-contain" />
           <span>Alerta Temprana</span>
         </Link>
         <nav className="flex items-center gap-6 text-sm">
