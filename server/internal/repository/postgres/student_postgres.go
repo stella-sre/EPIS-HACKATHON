@@ -151,6 +151,56 @@ func (r *studentRepository) SaveAssessment(ctx context.Context, a *domain.RiskAs
 	}, nil
 }
 
+func (r *studentRepository) Create(ctx context.Context, name, schoolName, zone, educationLevel, nativeLanguage string, grade int) (*domain.StudentSummary, error) {
+	var schoolID string
+	err := r.db.QueryRowContext(ctx, `
+		INSERT INTO academic.schools (name, zone, level)
+		VALUES ($1, $2, $3)
+		RETURNING id`,
+		schoolName, zone, educationLevel,
+	).Scan(&schoolID)
+	if err != nil {
+		return nil, err
+	}
+
+	var studentID string
+	err = r.db.QueryRowContext(ctx, `
+		INSERT INTO academic.students (name, school_id, native_language, education_level, grade)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id`,
+		name, schoolID, nativeLanguage, educationLevel, grade,
+	).Scan(&studentID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.StudentSummary{
+		ID:             studentID,
+		Name:           name,
+		SchoolName:     schoolName,
+		Zone:           zone,
+		EducationLevel: educationLevel,
+		Grade:          grade,
+		NativeLanguage: nativeLanguage,
+		Records:        []domain.AcademicRecord{},
+	}, nil
+}
+
+func (r *studentRepository) UpsertRecord(ctx context.Context, studentID string, term int, attendancePct, gradeAvg float64, participation int) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO academic.academic_records
+			(student_id, term, attendance_pct, grade_avg, participation)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (student_id, term) DO UPDATE SET
+			attendance_pct = EXCLUDED.attendance_pct,
+			grade_avg      = EXCLUDED.grade_avg,
+			participation  = EXCLUDED.participation,
+			recorded_at    = now()`,
+		studentID, term, attendancePct, gradeAvg, participation,
+	)
+	return err
+}
+
 func pgTextArray(arr []string) string {
 	if len(arr) == 0 {
 		return "{}"

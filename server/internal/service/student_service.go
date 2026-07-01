@@ -98,6 +98,29 @@ func (s *StudentService) Assess(ctx context.Context, id string) (*dto.AssessResp
 	}, nil
 }
 
+func (s *StudentService) Create(ctx context.Context, in dto.CreateStudentInput) (*dto.StudentListItem, error) {
+	st, err := s.repo.Create(ctx,
+		in.Name, in.SchoolName, in.Zone, in.EducationLevel, in.NativeLanguage, in.Grade,
+	)
+	if err != nil {
+		return nil, err
+	}
+	risk := s.risk.Calculate(st.Records)
+	item := toListItem(*st, risk)
+	return &item, nil
+}
+
+func (s *StudentService) UpsertRecord(ctx context.Context, studentID string, in dto.UpsertRecordInput) error {
+	_, err := s.repo.FindDetail(ctx, studentID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrStudentNotFound
+		}
+		return err
+	}
+	return s.repo.UpsertRecord(ctx, studentID, in.Term, in.AttendancePct, in.GradeAvg, in.Participation)
+}
+
 func toListItem(st domain.StudentSummary, risk domain.RiskResult) dto.StudentListItem {
 	return dto.StudentListItem{
 		ID:             st.ID,

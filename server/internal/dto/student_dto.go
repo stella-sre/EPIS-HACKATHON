@@ -43,3 +43,19 @@ type AssessResponse struct {
 	Reasons    []string `json:"reasons"`
 	AssessedAt string   `json:"assessed_at"`
 }
+
+type CreateStudentInput struct {
+	Name           string `json:"name"`
+	SchoolName     string `json:"school_name"`
+	Zone           string `json:"zone"`
+	EducationLevel string `json:"education_level"`
+	Grade          int    `json:"grade"`
+	NativeLanguage string `json:"native_language"`
+}
+
+type UpsertRecordInput struct {
+	Term          int     `json:"term"`
+	AttendancePct float64 `json:"attendance_pct"`
+	GradeAvg      float64 `json:"grade_avg"`
+	Participation int     `json:"participation"`
+}
