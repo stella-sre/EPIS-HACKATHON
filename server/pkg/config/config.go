@@ -13,7 +13,7 @@ type Config struct {
 	Port           string
 	PgURL          string
 	JWTSecret      string
-	MinimaxAPIKey string
+	GeminiAPIKey string
 }
 
 func Load() (*Config, error) {
@@ -32,6 +32,6 @@ func Load() (*Config, error) {
 		Port:          viper.GetString("PORT"),
 		PgURL:         viper.GetString("PG_URL"),
 		JWTSecret:     viper.GetString("JWT_SECRET"),
-		MinimaxAPIKey: viper.GetString("MINIMAX_API_KEY"),
+		GeminiAPIKey: viper.GetString("GEMINI_API_KEY"),
 	}, nil
 }
