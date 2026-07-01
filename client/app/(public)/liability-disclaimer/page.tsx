@@ -1,4 +1,4 @@
-import { FileCheck, AlertTriangle, Scale, Users, GraduationCap, Shield, Heart } from "lucide-react";
+import { FileCheck, AlertTriangle, Scale, Users, GraduationCap, Shield, Heart } from 'lucide-react';
 
 export default function LiabilityDisclaimerPage() {
   return (
@@ -29,13 +29,16 @@ export default function LiabilityDisclaimerPage() {
             1. Project Nature
           </h2>
           <p>
-            This system was developed as part of <strong>Hackathon EPIS XXI — "Innovating for Peru"</strong>, Category B: Vanguard (Generative AI), organized by the National University of San Cristóbal de Huamanga (UNSCH).
+            This system was developed as part of <strong>Hackathon EPIS XXI — &quot;Innovating for Peru&quot;</strong>, Category B: Vanguard (Generative AI), organized by the National University of San Cristóbal de Huamanga (UNSCH).
           </p>
           <div className="p-4 bg-muted/50 rounded-xl border">
             <p className="text-sm">
-              <strong>Stella Team</strong><br />
-              Isaias Ramos Lopez — Code: 27202506<br />
-              John Carlos Solca Prado — Code: 27210502<br />
+              <strong>Stella Team</strong>
+              <br />
+              Isaias Ramos Lopez — Code: 27202506
+              <br />
+              John Carlos Solca Prado — Code: 27210502
+              <br />
               UNSCH — Professional School of Systems Engineering
             </p>
           </div>
@@ -49,12 +52,12 @@ export default function LiabilityDisclaimerPage() {
           <p>The Stella team and UNSCH assume no responsibility for:</p>
           <div className="grid gap-3">
             {[
-              { title: "Pedagogical support prototype (MVP)", desc: "This tool is a demonstration prototype, not a finished or certified product." },
-              { title: "Does not constitute official evaluation", desc: "Does not replace official evaluations or teacher decisions." },
-              { title: "Completely fictitious data", desc: "All student data is invented; does not represent real minors." },
-              { title: "AI recommendations", desc: "Generated suggestions are guidance, not diagnoses or prescriptions." },
-              { title: "No affiliation with MINEDU", desc: "We are not affiliated, endorsed or approved by the Ministry of Education of Peru." },
-              { title: "Does not replace SIAGIE", desc: "Does not replace official educational management systems like SIAGIE." },
+              { title: 'Pedagogical support prototype (MVP)', desc: 'This tool is a demonstration prototype, not a finished or certified product.' },
+              { title: 'Does not constitute official evaluation', desc: 'Does not replace official evaluations or teacher decisions.' },
+              { title: 'Completely fictitious data', desc: 'All student data is invented; does not represent real minors.' },
+              { title: 'AI recommendations', desc: 'Generated suggestions are guidance, not diagnoses or prescriptions.' },
+              { title: 'No affiliation with MINEDU', desc: 'We are not affiliated, endorsed or approved by the Ministry of Education of Peru.' },
+              { title: 'Does not replace SIAGIE', desc: 'Does not replace official educational management systems like SIAGIE.' },
             ].map((item, i) => (
               <div key={i} className="p-3 bg-muted/50 rounded-lg border flex items-start gap-3">
                 <Shield className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -109,9 +112,7 @@ export default function LiabilityDisclaimerPage() {
               <p className="text-sm">Code: 27210502</p>
             </div>
           </div>
-          <p className="text-center text-sm mt-4">
-            UNSCH — Professional School of Systems Engineering
-          </p>
+          <p className="text-center text-sm mt-4">UNSCH — Professional School of Systems Engineering</p>
         </section>
 
         <section className="space-y-4">

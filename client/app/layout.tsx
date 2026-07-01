@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Poppins, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -29,17 +27,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${plusJakartaSans.variable} ${poppins.variable} ${jetbrainsMono.variable} min-h-full flex flex-col antialiased`}>
-        <Providers>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </Providers>
+      <body
+        className={`${plusJakartaSans.variable} ${poppins.variable} ${jetbrainsMono.variable} min-h-full flex flex-col antialiased`}
+      >
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
