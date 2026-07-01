@@ -49,6 +49,7 @@ func main() {
 	seedUsers(db)
 	seedDistricts(db)
 	seedStudents(db)
+	seedHighRiskStudents(db)
 
 	log.Info().Msg("seed complete")
 }
@@ -298,6 +299,132 @@ func seedAcademicRecords(db *sql.DB, studentID string, dropoutRate float64, rng 
 			ON CONFLICT (student_id, term) DO NOTHING`,
 			studentID, term, attendance, grade, participation)
 	}
+}
+
+type hrRecord struct {
+	term          int
+	attendancePct float64
+	gradeAvg      float64
+	participation int
+}
+
+type hrStudent struct {
+	name     string
+	school   string
+	zone     string
+	level    string
+	grade    int
+	language string
+	records  []hrRecord
+}
+
+var highRiskStudents = []hrStudent{
+	{
+		name:     "Ana Rosa Mamani Quispe",
+		school:   "IE N° 38540 San Francisco",
+		zone:     "rural", level: "secondary", grade: 3, language: "Quechua",
+		records: []hrRecord{
+			{1, 72.0, 10.5, 2},
+			{2, 68.0, 9.8, 2},
+			{3, 65.0, 8.5, 1},
+			{4, 60.0, 7.2, 1},
+		},
+	},
+	{
+		name:     "Carlos Eduardo Condori Flores",
+		school:   "IE N° 24680 Villa Mercedes",
+		zone:     "rural", level: "primary", grade: 5, language: "Quechua",
+		records: []hrRecord{
+			{1, 65.0, 9.0, 2},
+			{2, 60.0, 8.5, 1},
+			{3, 58.0, 8.0, 1},
+			{4, 55.0, 7.0, 1},
+		},
+	},
+	{
+		name:     "Maria Luisa Ccapa Huanca",
+		school:   "IE N° 56789 Vista Alegre",
+		zone:     "rural", level: "secondary", grade: 2, language: "Quechua",
+		records: []hrRecord{
+			{1, 74.0, 11.5, 3},
+			{2, 71.0, 10.0, 2},
+			{3, 70.0, 9.0, 2},
+			{4, 68.0, 8.5, 1},
+		},
+	},
+	{
+		name:     "Luis Angel Apaza Morales",
+		school:   "IE N° 91234 Santa Rosa",
+		zone:     "urban", level: "secondary", grade: 4, language: "Español",
+		records: []hrRecord{
+			{1, 70.0, 9.0, 1},
+			{2, 68.0, 8.5, 1},
+			{3, 65.0, 7.5, 1},
+			{4, 62.0, 6.5, 1},
+		},
+	},
+	{
+		name:     "Rosa Elena Ramos Chavez",
+		school:   "IE N° 33456 Nueva Esperanza",
+		zone:     "rural", level: "primary", grade: 6, language: "Quechua",
+		records: []hrRecord{
+			{1, 73.0, 10.0, 2},
+			{2, 70.0, 9.5, 2},
+			{3, 67.0, 8.5, 1},
+			{4, 65.0, 7.0, 1},
+		},
+	},
+}
+
+func seedHighRiskStudents(db *sql.DB) {
+	log.Info().Msg("seeding high-risk students...")
+	inserted := 0
+
+	for _, s := range highRiskStudents {
+		var exists bool
+		db.QueryRow(`SELECT EXISTS(SELECT 1 FROM academic.students WHERE name = $1)`, s.name).Scan(&exists)
+		if exists {
+			continue
+		}
+
+		var schoolID string
+		db.QueryRow(`
+			INSERT INTO academic.schools (name, zone, level)
+			VALUES ($1, $2, $3) RETURNING id`,
+			s.school, s.zone, s.level,
+		).Scan(&schoolID)
+
+		if schoolID == "" {
+			log.Error().Str("name", s.name).Msg("could not create school")
+			continue
+		}
+
+		var studentID string
+		err := db.QueryRow(`
+			INSERT INTO academic.students (name, school_id, native_language, education_level, grade)
+			VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+			s.name, schoolID, s.language, s.level, s.grade,
+		).Scan(&studentID)
+		if err != nil {
+			log.Error().Err(err).Str("name", s.name).Msg("insert high-risk student")
+			continue
+		}
+
+		for _, r := range s.records {
+			db.Exec(`
+				INSERT INTO academic.academic_records
+					(student_id, term, attendance_pct, grade_avg, participation)
+				VALUES ($1,$2,$3,$4,$5)
+				ON CONFLICT (student_id, term) DO UPDATE SET
+					attendance_pct = EXCLUDED.attendance_pct,
+					grade_avg      = EXCLUDED.grade_avg,
+					participation  = EXCLUDED.participation`,
+				studentID, r.term, r.attendancePct, r.gradeAvg, r.participation)
+		}
+		inserted++
+	}
+
+	log.Info().Int("inserted", inserted).Msg("high-risk students ready")
 }
 
 func clamp(v, min, max float64) float64 {
