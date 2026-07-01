@@ -1,17 +1,17 @@
 import Link from "next/link"
-import { Bell, ArrowRight, ShieldAlert } from "lucide-react"
+import { Bell, ArrowRight, ShieldAlert, AlertTriangle } from "lucide-react"
 import { StudentListItem } from "@/types/student"
 import { RiskBadge } from "@/components/students/risk-badge"
 
-async function getStudents(): Promise<StudentListItem[]> {
+async function getStudents(): Promise<{ students: StudentListItem[]; error?: string }> {
   try {
     const res = await fetch(`${process.env.BACKEND_URL}/api/v1/students`, {
       cache: "no-store",
     })
-    if (!res.ok) return []
-    return res.json()
-  } catch {
-    return []
+    if (!res.ok) return { students: [], error: `API respondió ${res.status}` }
+    return { students: await res.json() }
+  } catch (e) {
+    return { students: [], error: e instanceof Error ? e.message : "Error de conexión con el servidor" }
   }
 }
 
@@ -23,7 +23,7 @@ const REASON_LABELS: Record<string, string> = {
 }
 
 export default async function AlertsPage() {
-  const students = await getStudents()
+  const { students, error } = await getStudents()
   const alerts = students.filter((s) => s.risk.level === "high")
 
   return (
@@ -31,16 +31,31 @@ export default async function AlertsPage() {
       <div>
         <h1 className="text-2xl font-semibold font-heading">Alertas</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Estudiantes con riesgo alto que requieren intervención inmediata.
+          {alerts.length > 0
+            ? `${alerts.length} estudiante${alerts.length > 1 ? "s" : ""} con riesgo alto — intervención inmediata recomendada`
+            : "Estudiantes con riesgo alto que requieren intervención inmediata."}
         </p>
       </div>
 
-      {alerts.length === 0 ? (
+      {error && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 p-4 text-sm text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="size-4 shrink-0" />
+          <span>No se pudo conectar con el servidor: <code className="font-mono text-xs">{error}</code>. Asegúrate de que el backend esté corriendo.</span>
+        </div>
+      )}
+
+      {!error && alerts.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-16 text-muted-foreground">
           <Bell className="size-8" />
-          <p className="text-sm">No hay alertas activas.</p>
+          <p className="text-sm">
+            {students.length === 0
+              ? "No hay estudiantes cargados. Ejecuta make seed primero."
+              : "No hay estudiantes con riesgo alto en este momento."}
+          </p>
         </div>
-      ) : (
+      )}
+
+      {alerts.length > 0 && (
         <div className="flex flex-col gap-3">
           {alerts.map((s) => (
             <div key={s.id} className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 p-4 flex flex-col gap-3">
@@ -58,7 +73,9 @@ export default async function AlertsPage() {
                 </Link>
               </div>
 
-              <p className="text-xs text-muted-foreground">{s.school_name} · {s.zone === "rural" ? "Rural" : "Urbana"}</p>
+              <p className="text-xs text-muted-foreground">
+                {s.school_name} · {s.zone === "rural" ? "Rural" : "Urbana"} · {s.native_language}
+              </p>
 
               <ul className="flex flex-col gap-1">
                 {s.risk.reasons.map((r) => (
