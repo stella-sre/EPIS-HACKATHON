@@ -117,10 +117,10 @@ client/
 
 ---
 
-### 4.2 API — Go (Repository Architecture)
+### 4.2 API — Go (SERVER - Repository Architecture)
 
 ```
-api/
+server/
 ├── cmd/
 │   └── server/
 │       └── main.go                     # entrypoint, wiring de dependencias
