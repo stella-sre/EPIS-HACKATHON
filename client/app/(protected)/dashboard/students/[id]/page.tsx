@@ -4,6 +4,7 @@ import { ArrowLeft, MapPin, BookOpen, Globe } from "lucide-react"
 import { StudentDetail } from "@/types/student"
 import { RiskBadge } from "@/components/students/risk-badge"
 import { AssessButton } from "@/components/students/assess-button"
+import { RecommendButton } from "@/components/students/recommend-button"
 
 async function getStudent(id: string): Promise<StudentDetail | null> {
   try {
@@ -125,6 +126,14 @@ export default async function StudentDetailPage({
         )}
 
         <AssessButton studentId={student.id} />
+      </div>
+
+      <div className="rounded-xl border p-5 flex flex-col gap-4">
+        <h2 className="font-semibold text-sm">Recomendación de intervención</h2>
+        <p className="text-sm text-muted-foreground">
+          La IA analizará los factores de riesgo del estudiante y generará una recomendación personalizada y contextualizada para el docente.
+        </p>
+        <RecommendButton studentId={student.id} />
       </div>
 
       {student.records.length > 0 && (
