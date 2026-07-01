@@ -14,7 +14,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"golang.org/x/crypto/bcrypt"
+
+	"server/pkg/argon2id"
 )
 
 func main() {
@@ -70,8 +71,8 @@ func runMigrations(db *sql.DB) {
 
 func seedRoles(db *sql.DB) {
 	log.Info().Msg("seeding roles...")
-	for _, role := range []string{"admin", "teacher"} {
-		db.Exec(`INSERT INTO auth.roles (name) VALUES ($1) ON CONFLICT (name) DO NOTHING`, role)
+	for _, name := range []string{"admin", "teacher"} {
+		db.Exec(`INSERT INTO auth.roles (name) VALUES ($1) ON CONFLICT (name) DO NOTHING`, name)
 	}
 	log.Info().Msg("roles ready")
 }
@@ -91,9 +92,9 @@ func seedUsers(db *sql.DB) {
 }
 
 func upsertUser(db *sql.DB, email, name, password string) string {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, err := argon2id.Hash(password)
 	if err != nil {
-		log.Fatal().Err(err).Msg("bcrypt failed")
+		log.Fatal().Err(err).Msg("argon2id hash failed")
 	}
 
 	var id string
@@ -102,7 +103,7 @@ func upsertUser(db *sql.DB, email, name, password string) string {
 		VALUES ($1, $2, $3)
 		ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
 		RETURNING id`,
-		email, name, string(hash),
+		email, name, hash,
 	).Scan(&id)
 
 	return id
@@ -120,15 +121,8 @@ func assignRole(db *sql.DB, userID, roleName string) {
 
 func seedDistricts(db *sql.DB) {
 	log.Info().Msg("seeding districts from CSV...")
-
-	loadDistrictCSV(db,
-		filepath.Join("data", "desertores_Ed_Prim_2023-2024.csv"),
-		"primary",
-	)
-	loadDistrictCSV(db,
-		filepath.Join("data", "desertores_Ed_Sec_2023-2024.csv"),
-		"secondary",
-	)
+	loadDistrictCSV(db, filepath.Join("data", "desertores_Ed_Prim_2023-2024.csv"), "primary")
+	loadDistrictCSV(db, filepath.Join("data", "desertores_Ed_Sec_2023-2024.csv"), "secondary")
 
 	var n int
 	db.QueryRow("SELECT COUNT(*) FROM academic.districts").Scan(&n)
@@ -147,7 +141,7 @@ func loadDistrictCSV(db *sql.DB, path, level string) {
 		log.Fatal().Err(err).Str("file", path).Msg("CSV read error")
 	}
 
-	for _, row := range rows[1:] { // skip header
+	for _, row := range rows[1:] {
 		ubigeoInt, _ := strconv.Atoi(strings.TrimSpace(row[0]))
 		ubigeo := fmt.Sprintf("%06d", ubigeoInt)
 		dept := strings.TrimSpace(row[1])
@@ -229,15 +223,14 @@ func seedStudents(db *sql.DB) {
 		ORDER  BY RANDOM()
 		LIMIT  20`)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to query districts")
+		log.Fatal().Err(err).Msg("query districts")
 	}
 	defer rows.Close()
 
 	var districts []districtRow
 	for rows.Next() {
 		var d districtRow
-		rows.Scan(&d.ubigeo, &d.department, &d.districtName,
-			&d.primaryRate, &d.secondaryRate)
+		rows.Scan(&d.ubigeo, &d.department, &d.districtName, &d.primaryRate, &d.secondaryRate)
 		districts = append(districts, d)
 	}
 
@@ -254,17 +247,14 @@ func seedStudents(db *sql.DB) {
 			zone = "rural"
 		}
 
-		// academic.schools
 		schoolName := fmt.Sprintf("IE N° %d %s", 10000+rng.Intn(90000), d.districtName)
 		var schoolID string
 		db.QueryRow(`
 			INSERT INTO academic.schools (name, ubigeo, zone, level)
-			VALUES ($1, $2, $3, $4)
-			RETURNING id`,
+			VALUES ($1,$2,$3,$4) RETURNING id`,
 			schoolName, d.ubigeo, zone, level,
 		).Scan(&schoolID)
 
-		// academic.students
 		grade := rng.Intn(6) + 1
 		if level == "secondary" {
 			grade = rng.Intn(5) + 1
@@ -283,12 +273,11 @@ func seedStudents(db *sql.DB) {
 		var studentID string
 		err := db.QueryRow(`
 			INSERT INTO academic.students (name, school_id, native_language, education_level, grade)
-			VALUES ($1,$2,$3,$4,$5)
-			RETURNING id`,
+			VALUES ($1,$2,$3,$4,$5) RETURNING id`,
 			name, schoolID, lang, level, grade,
 		).Scan(&studentID)
 		if err != nil {
-			log.Error().Err(err).Str("name", name).Msg("failed to insert student")
+			log.Error().Err(err).Str("name", name).Msg("insert student")
 			continue
 		}
 

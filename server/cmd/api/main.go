@@ -40,7 +40,7 @@ func main() {
 		log.Info().Str("pg_url", cfg.PgURL).Msg("db connected")
 	}
 
-	r := router.New(db)
+	r := router.New(db, cfg)
 
 	addr := fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
 	srv := &http.Server{
