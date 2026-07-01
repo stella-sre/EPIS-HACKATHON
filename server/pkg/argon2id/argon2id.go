@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	memory      uint32 = 64 * 1024 // 64 MB
+	memory      uint32 = 64 * 1024
 	iterations  uint32 = 3
 	parallelism uint8  = 2
 	saltLen     uint32 = 16

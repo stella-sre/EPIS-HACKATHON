@@ -53,8 +53,6 @@ func main() {
 	log.Info().Msg("seed complete")
 }
 
-// ─── migrations ──────────────────────────────────────────────────────────────
-
 func runMigrations(db *sql.DB) {
 	log.Info().Msg("running migrations...")
 	content, err := os.ReadFile(filepath.Join("migrations", "init.up.sql"))
@@ -67,8 +65,6 @@ func runMigrations(db *sql.DB) {
 	log.Info().Msg("migrations applied")
 }
 
-// ─── auth.roles ───────────────────────────────────────────────────────────────
-
 func seedRoles(db *sql.DB) {
 	log.Info().Msg("seeding roles...")
 	for _, name := range []string{"admin", "teacher"} {
@@ -76,8 +72,6 @@ func seedRoles(db *sql.DB) {
 	}
 	log.Info().Msg("roles ready")
 }
-
-// ─── auth.users + auth.user_roles ────────────────────────────────────────────
 
 func seedUsers(db *sql.DB) {
 	log.Info().Msg("seeding users...")
@@ -116,8 +110,6 @@ func assignRole(db *sql.DB, userID, roleName string) {
 		ON CONFLICT DO NOTHING`,
 		userID, roleName)
 }
-
-// ─── academic.districts ───────────────────────────────────────────────────────
 
 func seedDistricts(db *sql.DB) {
 	log.Info().Msg("seeding districts from CSV...")
@@ -176,8 +168,6 @@ func loadDistrictCSV(db *sql.DB, path, level string) {
 		}
 	}
 }
-
-// ─── academic.schools + academic.students + academic.academic_records ─────────
 
 type districtRow struct {
 	ubigeo        string
