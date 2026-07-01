@@ -14,16 +14,22 @@ import (
 func New(db *sql.DB, cfg *config.Config) http.Handler {
 	mux := http.NewServeMux()
 
-	userRepo := pg.NewUserRepository(db)
+	userRepo    := pg.NewUserRepository(db)
+	studentRepo := pg.NewStudentRepository(db)
 
-	authSvc := service.NewAuthService(userRepo, cfg.JWTSecret)
+	authSvc    := service.NewAuthService(userRepo, cfg.JWTSecret)
+	studentSvc := service.NewStudentService(studentRepo)
 
-	authH   := handler.NewAuthHandler(authSvc)
-	healthH := handler.NewHealthHandler(db)
+	authH    := handler.NewAuthHandler(authSvc)
+	healthH  := handler.NewHealthHandler(db)
+	studentH := handler.NewStudentHandler(studentSvc)
 
-	mux.HandleFunc("POST /api/v1/auth/signin",     authH.SignIn)
-	mux.HandleFunc("GET /api/v1/health",            healthH.Health)
-	mux.HandleFunc("GET /api/v1/health/health",     healthH.HealthDB)
+	mux.HandleFunc("POST /api/v1/auth/signin",           authH.SignIn)
+	mux.HandleFunc("GET /api/v1/health",                  healthH.Health)
+	mux.HandleFunc("GET /api/v1/health/health",           healthH.HealthDB)
+	mux.HandleFunc("GET /api/v1/students",                studentH.List)
+	mux.HandleFunc("GET /api/v1/students/{id}",           studentH.GetByID)
+	mux.HandleFunc("POST /api/v1/students/{id}/assess",   studentH.Assess)
 
 	return middleware.Logger(mux)
 }
