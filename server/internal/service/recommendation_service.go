@@ -50,6 +50,30 @@ func NewRecommendationService(
 	}
 }
 
+func (s *RecommendationService) List(ctx context.Context) ([]dto.RecommendationListItem, error) {
+	items, err := s.recRepo.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]dto.RecommendationListItem, len(items))
+	for i, item := range items {
+		result[i] = dto.RecommendationListItem{
+			ID:              item.ID,
+			StudentID:       item.StudentID,
+			StudentName:     item.StudentName,
+			Explanation:     item.Explanation,
+			SuggestedAction: item.SuggestedAction,
+			GeneratedAt:     item.GeneratedAt.Format(time.RFC3339),
+			Risk: dto.RiskDTO{
+				Level:   item.RiskLevel,
+				Reasons: item.Reasons,
+			},
+		}
+	}
+	return result, nil
+}
+
 func (s *RecommendationService) Generate(ctx context.Context, studentID string) (*dto.RecommendationResponse, error) {
 	st, err := s.students.FindDetail(ctx, studentID)
 	if err != nil {

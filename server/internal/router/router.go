@@ -19,11 +19,11 @@ func New(db *sql.DB, cfg *config.Config) http.Handler {
 	studentRepo := pg.NewStudentRepository(db)
 	recRepo     := pg.NewRecommendationRepository(db)
 
-	minimaxClient := llm.NewMinimaxClient(cfg.MinimaxAPIKey)
+	geminiClient := llm.NewGeminiClient(cfg.GeminiAPIKey)
 
 	authSvc    := service.NewAuthService(userRepo, cfg.JWTSecret)
 	studentSvc := service.NewStudentService(studentRepo)
-	recSvc     := service.NewRecommendationService(studentRepo, recRepo, minimaxClient)
+	recSvc     := service.NewRecommendationService(studentRepo, recRepo, geminiClient)
 
 	authH    := handler.NewAuthHandler(authSvc)
 	healthH  := handler.NewHealthHandler(db)
@@ -37,6 +37,7 @@ func New(db *sql.DB, cfg *config.Config) http.Handler {
 	mux.HandleFunc("GET /api/v1/students/{id}",              studentH.GetByID)
 	mux.HandleFunc("POST /api/v1/students/{id}/assess",      studentH.Assess)
 	mux.HandleFunc("POST /api/v1/students/{id}/recommend",   recH.Generate)
+	mux.HandleFunc("GET /api/v1/recommendations",            recH.List)
 
 	return middleware.Logger(mux)
 }

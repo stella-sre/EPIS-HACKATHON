@@ -17,6 +17,16 @@ func NewRecommendationHandler(recommendations *service.RecommendationService) *R
 	return &RecommendationHandler{recommendations: recommendations}
 }
 
+func (h *RecommendationHandler) List(w http.ResponseWriter, r *http.Request) {
+	items, err := h.recommendations.List(r.Context())
+	if err != nil {
+		log.Error().Err(err).Msg("recommendations.list")
+		writeError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	writeJSON(w, http.StatusOK, items)
+}
+
 func (h *RecommendationHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
@@ -31,7 +41,7 @@ func (h *RecommendationHandler) Generate(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		log.Error().Err(err).Str("id", id).Msg("recommend.generate")
-		writeError(w, http.StatusInternalServerError, "failed to generate recommendation")
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
