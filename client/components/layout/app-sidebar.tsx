@@ -76,7 +76,6 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      {/* ── Header ── */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -101,7 +100,6 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      {/* ── Nav ── */}
       <SidebarContent>
         {navItems.map((group) => (
           <SidebarGroup key={group.label}>
@@ -133,7 +131,6 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
-      {/* ── Footer / User ── */}
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
