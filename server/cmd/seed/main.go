@@ -44,8 +44,9 @@ func main() {
 	}
 
 	runMigrations(db)
-	seedDistricts(db)
+	seedRoles(db)
 	seedUsers(db)
+	seedDistricts(db)
 	seedStudents(db)
 
 	log.Info().Msg("seed complete")
@@ -65,7 +66,57 @@ func runMigrations(db *sql.DB) {
 	log.Info().Msg("migrations applied")
 }
 
-// ─── districts ───────────────────────────────────────────────────────────────
+// ─── auth.roles ───────────────────────────────────────────────────────────────
+
+func seedRoles(db *sql.DB) {
+	log.Info().Msg("seeding roles...")
+	for _, role := range []string{"admin", "teacher"} {
+		db.Exec(`INSERT INTO auth.roles (name) VALUES ($1) ON CONFLICT (name) DO NOTHING`, role)
+	}
+	log.Info().Msg("roles ready")
+}
+
+// ─── auth.users + auth.user_roles ────────────────────────────────────────────
+
+func seedUsers(db *sql.DB) {
+	log.Info().Msg("seeding users...")
+
+	adminID := upsertUser(db, "admin@education.pe", "Admin Demo", "admin123")
+	teacherID := upsertUser(db, "teacher@education.pe", "Docente Demo", "teacher123")
+
+	assignRole(db, adminID, "admin")
+	assignRole(db, teacherID, "teacher")
+
+	log.Info().Msg("users ready")
+}
+
+func upsertUser(db *sql.DB, email, name, password string) string {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatal().Err(err).Msg("bcrypt failed")
+	}
+
+	var id string
+	db.QueryRow(`
+		INSERT INTO auth.users (email, name, password_hash)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
+		RETURNING id`,
+		email, name, string(hash),
+	).Scan(&id)
+
+	return id
+}
+
+func assignRole(db *sql.DB, userID, roleName string) {
+	db.Exec(`
+		INSERT INTO auth.user_roles (user_id, role_id)
+		SELECT $1, id FROM auth.roles WHERE name = $2
+		ON CONFLICT DO NOTHING`,
+		userID, roleName)
+}
+
+// ─── academic.districts ───────────────────────────────────────────────────────
 
 func seedDistricts(db *sql.DB) {
 	log.Info().Msg("seeding districts from CSV...")
@@ -80,7 +131,7 @@ func seedDistricts(db *sql.DB) {
 	)
 
 	var n int
-	db.QueryRow("SELECT COUNT(*) FROM districts").Scan(&n)
+	db.QueryRow("SELECT COUNT(*) FROM academic.districts").Scan(&n)
 	log.Info().Int("total", n).Msg("districts ready")
 }
 
@@ -96,10 +147,9 @@ func loadDistrictCSV(db *sql.DB, path, level string) {
 		log.Fatal().Err(err).Str("file", path).Msg("CSV read error")
 	}
 
-	// skip header row
-	for _, row := range rows[1:] {
+	for _, row := range rows[1:] { // skip header
 		ubigeoInt, _ := strconv.Atoi(strings.TrimSpace(row[0]))
-		ubigeo := fmt.Sprintf("%06d", ubigeoInt) // ensure 6-digit zero-padding
+		ubigeo := fmt.Sprintf("%06d", ubigeoInt)
 		dept := strings.TrimSpace(row[1])
 		prov := strings.TrimSpace(row[2])
 		dist := strings.TrimSpace(row[3])
@@ -109,7 +159,7 @@ func loadDistrictCSV(db *sql.DB, path, level string) {
 
 		if level == "primary" {
 			db.Exec(`
-				INSERT INTO districts
+				INSERT INTO academic.districts
 					(ubigeo, department, province, district_name,
 					 primary_dropout_count, primary_enrollment, primary_dropout_rate)
 				VALUES ($1,$2,$3,$4,$5,$6,$7)
@@ -120,7 +170,7 @@ func loadDistrictCSV(db *sql.DB, path, level string) {
 				ubigeo, dept, prov, dist, dropouts, enrollment, rate)
 		} else {
 			db.Exec(`
-				INSERT INTO districts
+				INSERT INTO academic.districts
 					(ubigeo, department, province, district_name,
 					 secondary_dropout_count, secondary_enrollment, secondary_dropout_rate)
 				VALUES ($1,$2,$3,$4,$5,$6,$7)
@@ -133,30 +183,7 @@ func loadDistrictCSV(db *sql.DB, path, level string) {
 	}
 }
 
-// ─── users ───────────────────────────────────────────────────────────────────
-
-func seedUsers(db *sql.DB) {
-	log.Info().Msg("seeding users...")
-
-	upsertUser(db, "admin@education.pe", "Admin Demo", "admin123", "admin")
-	upsertUser(db, "teacher@education.pe", "Docente Demo", "teacher123", "teacher")
-
-	log.Info().Msg("users ready")
-}
-
-func upsertUser(db *sql.DB, email, name, password, role string) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Fatal().Err(err).Msg("bcrypt failed")
-	}
-	db.Exec(`
-		INSERT INTO users (email, name, password_hash, role)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (email) DO NOTHING`,
-		email, name, string(hash), role)
-}
-
-// ─── students + academic records ─────────────────────────────────────────────
+// ─── academic.schools + academic.students + academic.academic_records ─────────
 
 type districtRow struct {
 	ubigeo        string
@@ -178,7 +205,6 @@ var lastNames = []string{
 	"Gutiérrez", "Chávez", "Rojas", "Morales", "Suárez", "Díaz",
 }
 
-// departments where Quechua is common
 var quechuaDepts = map[string]bool{
 	"AYACUCHO": true, "CUSCO": true, "APURIMAC": true,
 	"PUNO": true, "HUANCAVELICA": true,
@@ -186,7 +212,7 @@ var quechuaDepts = map[string]bool{
 
 func seedStudents(db *sql.DB) {
 	var existing int
-	db.QueryRow("SELECT COUNT(*) FROM students").Scan(&existing)
+	db.QueryRow("SELECT COUNT(*) FROM academic.students").Scan(&existing)
 	if existing > 0 {
 		log.Info().Int("existing", existing).Msg("students already seeded — skipping")
 		return
@@ -198,7 +224,7 @@ func seedStudents(db *sql.DB) {
 		SELECT ubigeo, department, district_name,
 		       COALESCE(primary_dropout_rate, 0),
 		       COALESCE(secondary_dropout_rate, 0)
-		FROM   districts
+		FROM   academic.districts
 		WHERE  primary_dropout_rate > 0 OR secondary_dropout_rate > 0
 		ORDER  BY RANDOM()
 		LIMIT  20`)
@@ -215,7 +241,7 @@ func seedStudents(db *sql.DB) {
 		districts = append(districts, d)
 	}
 
-	rng := rand.New(rand.NewSource(42)) // fixed seed → reproducible demo data
+	rng := rand.New(rand.NewSource(42))
 
 	for _, d := range districts {
 		level, rate := "primary", d.primaryRate
@@ -223,6 +249,22 @@ func seedStudents(db *sql.DB) {
 			level, rate = "secondary", d.secondaryRate
 		}
 
+		zone := "urban"
+		if rate > 2.0 {
+			zone = "rural"
+		}
+
+		// academic.schools
+		schoolName := fmt.Sprintf("IE N° %d %s", 10000+rng.Intn(90000), d.districtName)
+		var schoolID string
+		db.QueryRow(`
+			INSERT INTO academic.schools (name, ubigeo, zone, level)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id`,
+			schoolName, d.ubigeo, zone, level,
+		).Scan(&schoolID)
+
+		// academic.students
 		grade := rng.Intn(6) + 1
 		if level == "secondary" {
 			grade = rng.Intn(5) + 1
@@ -233,11 +275,6 @@ func seedStudents(db *sql.DB) {
 			lastNames[rng.Intn(len(lastNames))],
 			lastNames[rng.Intn(len(lastNames))],
 		)
-		school := fmt.Sprintf("IE N° %d %s", 10000+rng.Intn(90000), d.districtName)
-		zone := "urban"
-		if rate > 2.0 {
-			zone = "rural"
-		}
 		lang := "Español"
 		if quechuaDepts[d.department] && rng.Float64() > 0.4 {
 			lang = "Quechua"
@@ -245,10 +282,10 @@ func seedStudents(db *sql.DB) {
 
 		var studentID string
 		err := db.QueryRow(`
-			INSERT INTO students (name, school_name, zone, native_language, ubigeo, education_level, grade)
-			VALUES ($1,$2,$3,$4,$5,$6,$7)
+			INSERT INTO academic.students (name, school_id, native_language, education_level, grade)
+			VALUES ($1,$2,$3,$4,$5)
 			RETURNING id`,
-			name, school, zone, lang, d.ubigeo, level, grade,
+			name, schoolID, lang, level, grade,
 		).Scan(&studentID)
 		if err != nil {
 			log.Error().Err(err).Str("name", name).Msg("failed to insert student")
@@ -259,26 +296,25 @@ func seedStudents(db *sql.DB) {
 	}
 
 	var total int
-	db.QueryRow("SELECT COUNT(*) FROM students").Scan(&total)
+	db.QueryRow("SELECT COUNT(*) FROM academic.students").Scan(&total)
 	log.Info().Int("total", total).Msg("students ready")
 }
 
 func seedAcademicRecords(db *sql.DB, studentID string, dropoutRate float64, rng *rand.Rand) {
-	// district dropout rate drives baseline performance
 	baseAttendance := clamp(95.0-(dropoutRate*3), 50, 100)
 	baseGrade := clamp(17.0-(dropoutRate*1.2), 8, 20)
 
 	for term := 1; term <= 4; term++ {
 		attendance := clamp(baseAttendance+(rng.Float64()*10-5), 0, 100)
 		grade := clamp(baseGrade+(rng.Float64()*4-2), 0, 20)
-
-		participation := rng.Intn(3) + 2 // 2-4
+		participation := rng.Intn(3) + 2
 		if dropoutRate > 5 {
-			participation = rng.Intn(3) + 1 // 1-3 for high-risk districts
+			participation = rng.Intn(3) + 1
 		}
 
 		db.Exec(`
-			INSERT INTO academic_records (student_id, term, attendance_pct, grade_avg, participation)
+			INSERT INTO academic.academic_records
+				(student_id, term, attendance_pct, grade_avg, participation)
 			VALUES ($1,$2,$3,$4,$5)
 			ON CONFLICT (student_id, term) DO NOTHING`,
 			studentID, term, attendance, grade, participation)

@@ -12,13 +12,26 @@ import (
 	"github.com/spf13/viper"
 )
 
-var tables = []string{
-	"users",
-	"districts",
-	"students",
-	"academic_records",
-	"risk_assessments",
-	"recommendations",
+type tableRef struct {
+	schema string
+	name   string
+}
+
+var tables = []tableRef{
+	{"auth", "roles"},
+	{"auth", "users"},
+	{"auth", "user_roles"},
+	{"academic", "districts"},
+	{"academic", "schools"},
+	{"academic", "students"},
+	{"academic", "academic_records"},
+	{"academic", "risk_assessments"},
+	{"academic", "recommendations"},
+	{"metrics", "api_requests"},
+	{"metrics", "risk_snapshots"},
+	{"metrics", "recommendation_feedback"},
+	{"metrics", "alert_events"},
+	{"metrics", "outcome_tracking"},
 }
 
 func main() {
@@ -81,14 +94,14 @@ func status(db *sql.DB) {
 		db.QueryRow(`
 			SELECT EXISTS (
 				SELECT FROM information_schema.tables
-				WHERE table_schema = 'public' AND table_name = $1
-			)`, t).Scan(&exists)
+				WHERE table_schema = $1 AND table_name = $2
+			)`, t.schema, t.name).Scan(&exists)
 
 		mark := "✗ missing"
 		if exists {
 			mark = "✓ ok     "
 		}
-		fmt.Printf("  %s  %s\n", mark, t)
+		fmt.Printf("  %s  %s.%s\n", mark, t.schema, t.name)
 	}
 	fmt.Println()
 }
