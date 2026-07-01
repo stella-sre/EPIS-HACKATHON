@@ -9,10 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"server/internal/domain"
 	"server/internal/dto"
 	"server/internal/repository"
-	"server/pkg/anthropic"
+	"server/pkg/llm"
 )
 
 var reasonLabels = map[string]string{
@@ -32,19 +34,19 @@ type RecommendationService struct {
 	students repository.StudentRepository
 	recRepo  repository.RecommendationRepository
 	risk     *RiskService
-	llm      *anthropic.Client
+	llm      llm.Client
 }
 
 func NewRecommendationService(
 	students repository.StudentRepository,
 	recRepo repository.RecommendationRepository,
-	llm *anthropic.Client,
+	client llm.Client,
 ) *RecommendationService {
 	return &RecommendationService{
 		students: students,
 		recRepo:  recRepo,
 		risk:     NewRiskService(),
-		llm:      llm,
+		llm:      client,
 	}
 }
 
@@ -70,10 +72,16 @@ func (s *RecommendationService) Generate(ctx context.Context, studentID string) 
 
 	prompt := buildPrompt(st, riskResult)
 
-	raw, err := s.llm.Complete(ctx, prompt)
+	raw, tokens, err := s.llm.Complete(ctx, prompt)
 	if err != nil {
 		return nil, fmt.Errorf("llm: %w", err)
 	}
+
+	log.Info().
+		Str("student_id", studentID).
+		Str("risk_level", string(riskResult.Level)).
+		Int("tokens_used", tokens).
+		Msg("recommendation generated")
 
 	explanation, suggestedAction, err := parseResponse(raw)
 	if err != nil {
