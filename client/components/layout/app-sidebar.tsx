@@ -36,18 +36,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const navItems = [
+type NavItem = {
+  title: string;
+  href: string;
+  icon: React.ElementType;
+};
+
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
+const navGroups: NavGroup[] = [
   {
     label: "Principal",
     items: [
-      { title: "Dashboard",       href: "/dashboard",                 icon: LayoutDashboard },
-      { title: "Estudiantes",     href: "/dashboard/students",        icon: Users           },
+      { title: "Dashboard",         href: "/dashboard",                  icon: LayoutDashboard },
+      { title: "Estudiantes",       href: "/dashboard/students",         icon: Users           },
     ],
   },
   {
     label: "Análisis",
     items: [
-      { title: "Evaluación de Riesgo", href: "/dashboard/risk",          icon: ShieldAlert },
+      { title: "Evaluación de Riesgo", href: "/dashboard/risk",           icon: ShieldAlert },
       { title: "Recomendaciones",      href: "/dashboard/recommendations", icon: Lightbulb  },
       { title: "Alertas",              href: "/dashboard/alerts",          icon: Bell        },
     ],
@@ -55,7 +66,7 @@ const navItems = [
   {
     label: "Sistema",
     items: [
-      { title: "Métricas",        href: "/dashboard/metrics",         icon: BarChart3       },
+      { title: "Métricas", href: "/dashboard/metrics", icon: BarChart3 },
     ],
   },
 ];
@@ -70,7 +81,7 @@ function initials(name: string) {
 }
 
 export function AppSidebar() {
-  const pathname    = usePathname();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -101,7 +112,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {navItems.map((group) => (
+        {navGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarMenu>
@@ -113,11 +124,7 @@ export function AppSidebar() {
 
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.title}
-                    >
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
                       <Link href={item.href}>
                         <item.icon />
                         <span>{item.title}</span>
