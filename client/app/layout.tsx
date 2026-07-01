@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Poppins, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,13 +35,9 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} ${jetbrainsMono.variable} min-h-full flex flex-col antialiased`}>
         <Providers>
-          <header className="border-b">
-            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-              <h1 className="text-lg font-semibold">Alerta Temprana</h1>
-              <ThemeToggle />
-            </div>
-          </header>
+          <Navbar />
           <main className="flex-1">{children}</main>
+          <Footer />
         </Providers>
       </body>
     </html>
