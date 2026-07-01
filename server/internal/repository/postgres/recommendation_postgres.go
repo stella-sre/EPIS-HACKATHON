@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"server/internal/domain"
@@ -66,4 +67,52 @@ func (r *recommendationRepository) FindLatest(ctx context.Context, studentID str
 	}
 
 	return &rec, nil
+}
+
+func (r *recommendationRepository) ListAll(ctx context.Context) ([]domain.RecommendationListItem, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT
+			rec.id,
+			rec.student_id,
+			s.name                                            AS student_name,
+			rec.explanation,
+			rec.suggested_action,
+			rec.generated_at,
+			COALESCE(ra.risk_level, 'low')                   AS risk_level,
+			COALESCE(array_to_json(ra.reasons)::text, '[]')  AS reasons_json
+		FROM   academic.recommendations rec
+		JOIN   academic.students s         ON s.id  = rec.student_id
+		LEFT   JOIN academic.risk_assessments ra ON ra.id = rec.assessment_id
+		ORDER  BY rec.generated_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []domain.RecommendationListItem
+	for rows.Next() {
+		var item domain.RecommendationListItem
+		var reasonsJSON string
+
+		if err := rows.Scan(
+			&item.ID, &item.StudentID, &item.StudentName,
+			&item.Explanation, &item.SuggestedAction,
+			&item.GeneratedAt,
+			&item.RiskLevel, &reasonsJSON,
+		); err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal([]byte(reasonsJSON), &item.Reasons); err != nil {
+			item.Reasons = []string{}
+		}
+
+		result = append(result, item)
+	}
+
+	if result == nil {
+		result = []domain.RecommendationListItem{}
+	}
+
+	return result, rows.Err()
 }
