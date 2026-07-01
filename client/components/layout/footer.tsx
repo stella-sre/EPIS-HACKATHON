@@ -3,10 +3,10 @@ import Image from "next/image";
 import { Heart } from "lucide-react";
 
 const legalLinks = [
-  { href: "/legal/cookies", label: "Cookies" },
-  { href: "/legal/terminos", label: "Términos y condiciones" },
-  { href: "/legal/privacidad", label: "Privacidad" },
-  { href: "/legal/libre-de-reclamaciones", label: "Libre de reclamaciones" },
+  { href: "/cookies", label: "Cookies" },
+  { href: "/terms", label: "Terms" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/liability-disclaimer", label: "Liability Disclaimer" },
 ];
 
 export function Footer() {

@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
-import { Inter, Poppins, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Poppins, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 const poppins = Poppins({
-  variable: "--font-poppins",
+  variable: "--font-heading",
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -33,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.variable} ${poppins.variable} ${jetbrainsMono.variable} min-h-full flex flex-col antialiased`}>
+      <body className={`${plusJakartaSans.variable} ${poppins.variable} ${jetbrainsMono.variable} min-h-full flex flex-col antialiased`}>
         <Providers>
           <Navbar />
           <main className="flex-1">{children}</main>
